@@ -1,29 +1,46 @@
-import React from 'react';
+import React, {Component} from 'react';
 import {HashRouter as Router, Route, Switch} from 'react-router-dom';
-import {asyncComponent} from './utils/asyncComponent';
 
-import Header from './components/Header';
-import Footer from './components/Footer';
+import {asyncComponent} from './utils/asyncComponent';
+import {LogInContext} from './context';
 
 const DetailPackage = asyncComponent(() => import('./modules/detail'));
 const HomePage = asyncComponent(() => import('./modules/home'));
 
-const RouterApp = () => {
-  return (
-    <Router>
-      <div className="page-full-height">
-        <Header/>
-        <div className="container">
-          <Switch>
-            <Route exact path="/(search/:keyword)?" component={ HomePage } />
-            <Route exact path="/detail/@:scope/:package" component={DetailPackage} />
-            <Route exact path="/detail/:package" component={DetailPackage} />
-          </Switch>
-        </div>
-        <Footer/>
-      </div>
-    </Router>
-  );
-};
+class RouterApp extends Component {
+  render() {
+    return (
+      <LogInContext.Consumer>
+        {(value) => (
+          <Router>
+            <div className="container">
+              <Switch>
+                <Route
+                  exact
+                  path="/(search/:keyword)?"
+                  render={() => <HomePage isLoggedIn={value} />}
+                />
+                <Route
+                  exact
+                  path="/detail/@:scope/:package"
+                  render={(props) => (
+                    <DetailPackage {...props} isLoggedIn={value} />
+                  )}
+                />
+                <Route
+                  exact
+                  path="/detail/:package"
+                  render={(props) => (
+                    <DetailPackage {...props} isLoggedIn={value} />
+                  )}
+                />
+              </Switch>
+            </div>
+          </Router>
+        )}
+      </LogInContext.Consumer>
+    );
+  }
+}
 
 export default RouterApp;

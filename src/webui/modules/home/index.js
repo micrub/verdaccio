@@ -12,13 +12,14 @@ import Search from '../../components/Search';
 
 export default class Home extends React.Component {
   static propTypes = {
-    children: PropTypes.element
+    children: PropTypes.element,
+    isLoggedIn: PropTypes.bool
   }
 
   state = {
     loading: true,
     fistTime: true,
-    query: ''
+    query: '',
   }
 
   constructor(props) {
@@ -31,6 +32,11 @@ export default class Home extends React.Component {
     this.loadPackages();
   }
 
+  UNSAFE_componentWillReceiveProps(nextProps) {
+    if (this.props.isLoggedIn !== nextProps.isLoggedIn) {
+      this.loadPackages();
+    }
+  }
 
   componentDidUpdate(prevProps, prevState) { // eslint-disable-line no-unused-vars
     if (prevState.query !== this.state.query) {
@@ -48,22 +54,26 @@ export default class Home extends React.Component {
   }
 
   async loadPackages() {
-    try {
-      this.req = await API.request('packages', 'GET');
-
-      if (this.state.query === '') {
-        this.setState({
-          packages: this.req,
-          loading: false
+    // try {
+      API.request('packages', 'GET').then((d) => {
+        // eslint-disable-next-line
+        console.log(d);
+        if (this.state.query === '') {
+          this.setState({
+            packages: d,
+            loading: false
+          });
+        }
+      }).catch((err) => {
+        MessageBox.msgbox({
+          type: 'error',
+          title: 'Warning',
+          message: 'Unable to load package list: ' + err.message
         });
-      }
-    } catch (err) {
-      MessageBox.msgbox({
-        type: 'error',
-        title: 'Warning',
-        message: 'Unable to load package list: ' + err.message
-      });
-    }
+      })
+    // } catch (err) {
+
+    // }
   }
 
   async searchPackage(query) {
@@ -98,12 +108,10 @@ export default class Home extends React.Component {
   }
 
   render() {
-    return (
-      <div>
+    return <div>
         {this.renderSearchBar()}
-        {this.state.loading ? this.renderLoading() : this.renderPackageList()}
-      </div>
-    );
+      {this.state.loading ? this.renderLoading() : <PackageList help={this.state.packages.length === 0} packages={this.state.packages} />}
+      </div>;
   }
 
   renderSearchBar() {
@@ -115,9 +123,5 @@ export default class Home extends React.Component {
 
   renderLoading() {
     return <Loading text="Loading..." />;
-  }
-
-  renderPackageList() {
-    return <PackageList help={this.state.fistTime} packages={this.state.packages} />;
   }
 }
